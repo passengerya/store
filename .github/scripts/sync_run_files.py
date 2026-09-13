@@ -13,7 +13,8 @@
   - 优先保留本仓库现有文件使用的变体(不改变现有设备的安装习惯)
   - 本仓库没有该应用时, 新应用按 ARM64_VARIANT_PRIORITY 的顺序选择
 
-同步完成后, 删除同一应用同一架构下的旧版本 .run 文件,
+同步完成后, 删除同一应用、同一架构、同日期前缀下的旧版本 .run 文件
+(24_ 只删 24_, 25- 只删 25-, 避免同步 apk 版时误删 ipk 版),
 只清理 run/x86、run/arm64 根目录下的 .run, 不触碰任何 .ipk 文件。
 
 用法:
@@ -163,14 +164,27 @@ def download_asset(asset, dest_dir):
     os.replace(tmp, out)
 
 
+def leading_prefix(name):
+    """返回文件名开头的日期前缀(如 24_ / 25-), 无前缀返回空串。"""
+    m = RE_LEADING_PREFIX.match(name)
+    return m.group(0) if m else ""
+
+
 def cleanup_old(key, arch, keep_name, dry_run=False):
-    """删除 run/<arch>/ 根目录下同应用旧版本的 .run 文件(不触碰 .ipk 和子目录)。"""
+    """删除 run/<arch>/ 根目录下同应用旧版本的 .run 文件(不触碰 .ipk 和子目录)。
+
+    只清理与 keep_name 同前缀的旧文件(24_ 只删 24_, 25- 只删 25-),
+    避免同步 apk 版(25_)时误删 ipk 版(24_)。
+    """
+    keep_prefix = leading_prefix(keep_name)
     d = ARCH_DIRS[arch]
     if not os.path.isdir(d):
         return
     for f in sorted(os.listdir(d)):
         p = os.path.join(d, f)
         if not f.endswith(".run") or f == keep_name or not os.path.isfile(p):
+            continue
+        if leading_prefix(f) != keep_prefix:
             continue
         if norm_key(f) == key:
             print("[%s] %s: %s" % (arch, "将删除" if dry_run else "删除旧版本", f))
