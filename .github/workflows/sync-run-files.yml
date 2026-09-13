@@ -1,0 +1,68 @@
+# 从 CloudRunFilesBuilder 的 release 同步 .run 文件到本仓库 run/ 目录
+#
+# 触发方式:
+#   1. 定时: 每天 03:30 UTC(北京时间 11:30), 留出上游每日构建的完成时间
+#   2. 手动: workflow_dispatch(可指定其它源仓库)
+#   3. 上游构建完成后主动通知(repository_dispatch):
+#      在 CloudRunFilesBuilder 仓库的构建 workflow 末尾加一步:
+#
+#        - uses: peter-evans/repository-dispatch@v3
+#          with:
+#            token: ${{ secrets.STORE_REPO_PAT }}
+#            repository: passengerya/store
+#            event-type: run-files-updated
+#
+#      其中 STORE_REPO_PAT 是一个具有 repo 权限的 PAT, 保存在 builder 仓库的 secrets 里。
+#
+# 注意: 定时触发和 repository_dispatch 只会使用默认分支(master)上的 workflow 文件,
+#       请把本文件合并到 master 分支后才会生效。
+
+name: Sync Run Files
+
+on:
+  workflow_dispatch:
+    inputs:
+      builder_repo:
+        description: '源仓库(owner/repo)'
+        required: false
+        default: 'passengerya/CloudRunFilesBuilder'
+  repository_dispatch:
+    types: [run-files-updated]
+  schedule:
+    - cron: '30 3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-run-files
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync run files
+        env:
+          BUILDER_REPO: ${{ inputs.builder_repo || 'passengerya/CloudRunFilesBuilder' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/sync_run_files.py
+
+      - name: Commit and push
+        env:
+          BUILDER_REPO: ${{ inputs.builder_repo || 'passengerya/CloudRunFilesBuilder' }}
+        run: |
+          if [ -z "$(git status --porcelain run/)" ]; then
+            echo "没有变化, 跳过提交。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add run/
+          git commit -m "sync: 从 ${BUILDER_REPO} 同步 run 文件 ($(date -u +%F))" \
+            -m "Co-Authored-By: Claude Code <noreply@anthropic.com>"
+          git push
