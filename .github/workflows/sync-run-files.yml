@@ -1,7 +1,7 @@
 # 从 CloudRunFilesBuilder 的 release 同步 .run 文件到本仓库 run/ 目录
 #
 # 触发方式:
-#   1. 定时: 每天 03:30 UTC(北京时间 11:30), 留出上游每日构建的完成时间
+#   1. 定时: 每天 23:00 UTC(北京时间 7:00), 留出上游每日构建的完成时间
 #   2. 手动: workflow_dispatch(可指定其它源仓库)
 #   3. 上游构建完成后主动通知(repository_dispatch):
 #      在 CloudRunFilesBuilder 仓库的构建 workflow 末尾加一步:
@@ -29,7 +29,8 @@ on:
   repository_dispatch:
     types: [run-files-updated]
   schedule:
-    - cron: '30 3 * * *'
+    # 23:00 UTC = 北京时间 7:00
+    - cron: '0 23 * * *'
 
 permissions:
   contents: write

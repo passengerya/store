@@ -44,9 +44,10 @@ ARM64_VARIANT_PRIORITY = ["generic", "cortex-a53", "a53", ""]
 # 形如 "25-"/"24_" 的开头日期前缀(上游每日构建加在文件名前的标记)
 RE_LEADING_PREFIX = re.compile(r"^\d{2}[-_]")
 # 架构/变体标记(注意 aarch64 带变体的写法放在前面)
-RE_ARCH = re.compile(r"_?(?:x86_64|x86-64|aarch64(?:_cortex-a53|_a53|_generic)?|aarch32|arm64|all)")
-# 版本号: 主版本 + 可选的 -r修订号(修订号后面必须是分隔符或结尾, 避免误吞 git hash)
-RE_VERSION = re.compile(r"(\d+(?:\.\d+)+)(?:-r?(\d+)(?=[-_.]|$))?")
+# 注意: all 必须带 _ 前缀且处于边界, 避免误删应用名内部的 "all"(如 passwall)
+RE_ARCH = re.compile(r"_?(?:x86_64|x86-64|aarch64(?:_cortex-a53|_a53|_generic)?|aarch32|arm64)|_all(?=[-_.]|$)")
+# 版本号: 可带 v 前缀的主版本 + 可选的 -r修订号(修订号后面必须是分隔符或结尾, 避免误吞 git hash)
+RE_VERSION = re.compile(r"v?(\d+(?:\.\d+)+)(?:-r?(\d+)(?=[-_.]|$))?")
 RE_REV = re.compile(r"r\d+")                 # 独立的 r9 之类修订标记
 RE_HASH = re.compile(r"(?<![0-9a-z])[0-9a-f]{7,}(?![0-9a-z])")  # git 短 hash
 RE_NUM = re.compile(r"(?<![0-9a-z])\d+(?![0-9a-z])")            # 独立数字(如 ssrp 的 196)
