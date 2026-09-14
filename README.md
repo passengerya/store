@@ -2,6 +2,20 @@
 此项目用于存储 [ImmortalWrt-ImageBuilder](https://github.com/wukongdaily/ImmortalWrt-ImageBuilder) 仓库以外的第三方软件包。
 本仓库的 IPK 文件来自多个项目，版权归原作者，见 README 列表。
 
+## 项目定位
+
+本仓库是 OpenWrt 固件流水线**第二层的参考实现**：
+
+- **新项目 [AutoBuildImmortalTWrt](https://github.com/passengerya/AutoBuildImmortalTWrt) 已改为内嵌 store 方案，不再依赖本仓库**——它每天从 [CloudRunFilesBuilder](https://github.com/passengerya/CloudRunFilesBuilder) 的最新 Release 同步 .run，并把 .run 里的 ipk 解压到应用同名子目录，详见其 README 的「第三方软件包机制」章节；
+- 本仓库仍然保留两件事：
+  1. **.run 自动同步**：`.github/workflows/sync-run-files.yml` 每天 23:00 UTC（北京 7:00）从 CloudRunFilesBuilder 最新 Release 同步 .run 到 `run/x86/`、`run/arm64/` 并自动提交；
+  2. **手工 ipk 目录**：`run/<arch>/<应用名>/` 下的 ipk 为人工维护的软件包集合（来源见下方列表）。
+
+### run 目录命名
+
+- `.run` 放架构目录根，与上游 Release 资产同名；24.10 ipk 版无前缀/`24_`，25.12 apk 版 `25_`/`25-`；
+- `.ipk` 按应用建同名子目录：`run/<arch>/<应用名>/<ipk原名>.ipk`。
+
 
 | 软件名称                  | 简介 / 功能描述                        | 来源 / 项目地址                                                                           |
 | --------------------- | -------------------------------- | ----------------------------------------------------------------------------------- |
